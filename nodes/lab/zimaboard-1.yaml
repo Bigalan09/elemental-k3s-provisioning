@@ -1,0 +1,21 @@
+---
+hostname: zimaboard-1
+role: agent
+installDevice: /dev/sda
+environment: lab
+registrationGroup: lab-registration
+
+labels:
+  node-type: worker
+
+taints: []
+
+# SSH keys are managed externally via Kubernetes Secrets.
+# Defaults to the environment-level sshKeySecretRef from cluster-config.yaml.
+# sshKeySecretRef:
+#   name: lab-ssh-authorized-keys
+#   namespace: fleet-default
+
+tailscale:
+  enabled: false
+  # authKeySecretName: tailscale-auth-key
