@@ -1,0 +1,13 @@
+---
+apiVersion: elemental.cattle.io/v1beta1
+kind: ClusterNode
+metadata:
+  name: placeholder
+  namespace: fleet-default
+  labels:
+    elemental.cattle.io/hostname: placeholder
+    elemental.cattle.io/role: placeholder
+spec:
+  hostname: placeholder
+  role: placeholder
+  cluster: production

@@ -1,0 +1,14 @@
+---
+apiVersion: elemental.cattle.io/v1beta1
+kind: NodeRoleConfig
+metadata:
+  name: placeholder-role
+  namespace: fleet-default
+  labels:
+    elemental.cattle.io/hostname: placeholder
+    elemental.cattle.io/role: placeholder
+spec:
+  role: placeholder
+  hostname: placeholder
+  nodeLabels: {}
+  nodeTaints: []

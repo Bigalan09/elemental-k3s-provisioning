@@ -1,0 +1,21 @@
+---
+# Cluster-level configuration for the production K3s cluster.
+# This document describes the cluster identity and general settings.
+# Apply this to the Rancher management cluster to define the cluster record.
+
+clusterName: production
+kubernetesVersion: v1.29.4+k3s1
+namespace: fleet-default
+
+# The registration endpoint is provided by Rancher OS Manager after the operator is installed.
+# Replace the placeholder below with the actual registration URL from your management cluster.
+registrationEndpoint: "https://rancher.example.internal/v1/elemental/registration"
+
+# Token reference for node registration.
+# Create a Kubernetes Secret in the management cluster:
+#   kubectl create secret generic registration-token \
+#     --namespace fleet-default \
+#     --from-literal=token=<your-registration-token>
+registrationTokenSecretRef:
+  name: registration-token
+  namespace: fleet-default

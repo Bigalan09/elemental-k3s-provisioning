@@ -1,0 +1,31 @@
+---
+apiVersion: elemental.cattle.io/v1beta1
+kind: MachineRegistration
+metadata:
+  name: placeholder
+  namespace: fleet-default
+  labels:
+    elemental.cattle.io/hostname: placeholder
+spec:
+  # machineInventoryLabels are applied to MachineInventory resources created when a node registers.
+  machineInventoryLabels:
+    elemental.cattle.io/hostname: placeholder
+    elemental.cattle.io/role: placeholder
+  config:
+    cloud-init:
+      users:
+        - name: root
+          ssh_authorized_keys: []
+    elemental:
+      install:
+        device: /dev/sda
+        reboot: true
+        powerOff: false
+      registration:
+        # emulateTPM is only for development environments without hardware TPM.
+        emulateTPM: false
+  machineInventorySelectorTemplate:
+    spec:
+      selector:
+        matchLabels:
+          elemental.cattle.io/hostname: placeholder

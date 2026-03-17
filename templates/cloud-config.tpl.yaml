@@ -1,0 +1,9 @@
+---
+#cloud-config
+hostname: placeholder
+users:
+  - name: root
+    ssh_authorized_keys: []
+package_update: false
+runcmd:
+  - systemctl enable --now elemental-register

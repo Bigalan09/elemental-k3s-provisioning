@@ -1,0 +1,17 @@
+---
+hostname: agent-02
+role: agent
+installDevice: /dev/sda
+
+labels:
+  environment: production
+  node-type: worker
+
+taints: []
+
+sshAuthorizedKeys:
+  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExamplePublicKeyForAgent02 ops@management"
+
+tailscale:
+  enabled: true
+  authKeySecretName: tailscale-agent-02-authkey
