@@ -44,11 +44,12 @@ brew --version
 | `kubectl` | Kubernetes cluster management | `brew install kubectl` |
 | `helm` | Install Rancher and Elemental Operator | `brew install helm` |
 | `jq` | JSON processing for debugging and scripting | `brew install jq` |
+| `ansible` | Automated provisioning playbooks | `brew install ansible` |
 
 ### Install all tools at once
 
 ```bash
-brew install git yq shellcheck yamllint kubeconform kubectl helm jq
+brew install git yq shellcheck yamllint kubeconform kubectl helm jq ansible
 ```
 
 > **Note:** `yamllint` can also be installed via `pip install yamllint` if you prefer
@@ -65,6 +66,7 @@ kubeconform -v
 kubectl version --client
 helm version --short
 jq --version
+ansible --version
 ```
 
 All commands should return version information without errors.

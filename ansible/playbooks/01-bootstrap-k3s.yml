@@ -1,0 +1,84 @@
+---
+# 01-bootstrap-k3s.yml — Install K3s server on the mini-pc control plane node.
+#
+# This solves the chicken-and-egg problem: K3s must be running before
+# Rancher and the Elemental Operator can be installed.
+#
+# Usage:
+#   cd ansible
+#   ansible-playbook playbooks/01-bootstrap-k3s.yml
+
+- name: Bootstrap K3s on the control plane
+  hosts: control_plane
+  become: true
+  tasks:
+    - name: Check if K3s is already installed
+      ansible.builtin.stat:
+        path: /usr/local/bin/k3s
+      register: k3s_binary
+
+    - name: Install K3s server
+      when: not k3s_binary.stat.exists
+      block:
+        - name: Download K3s install script
+          ansible.builtin.get_url:
+            url: https://get.k3s.io
+            dest: /tmp/k3s-install.sh
+            mode: "0755"
+
+        - name: Run K3s installer
+          ansible.builtin.command:
+            cmd: /tmp/k3s-install.sh
+          environment:
+            INSTALL_K3S_VERSION: "{{ k3s_version }}"
+            INSTALL_K3S_EXEC: "server"
+          changed_when: true
+
+        - name: Remove install script
+          ansible.builtin.file:
+            path: /tmp/k3s-install.sh
+            state: absent
+
+    - name: Wait for K3s to be ready
+      ansible.builtin.command:
+        cmd: k3s kubectl get nodes
+      register: k3s_ready
+      until: k3s_ready.rc == 0
+      retries: 30
+      delay: 10
+      changed_when: false
+
+    - name: Display K3s node status
+      ansible.builtin.debug:
+        msg: "{{ k3s_ready.stdout_lines }}"
+
+    - name: Read kubeconfig from control plane
+      ansible.builtin.slurp:
+        src: /etc/rancher/k3s/k3s.yaml
+      register: kubeconfig_raw
+
+    - name: Save kubeconfig to MacBook
+      delegate_to: localhost
+      become: false
+      block:
+        - name: Ensure ~/.kube directory exists
+          ansible.builtin.file:
+            path: "{{ local_kubeconfig | dirname }}"
+            state: directory
+            mode: "0700"
+
+        - name: Write kubeconfig file
+          ansible.builtin.copy:
+            content: "{{ kubeconfig_raw.content | b64decode | regex_replace('127\\.0\\.0\\.1', hostvars[inventory_hostname].ansible_host) }}"
+            dest: "{{ local_kubeconfig }}"
+            mode: "0600"
+
+    - name: Verify kubectl works from control plane
+      ansible.builtin.command:
+        cmd: k3s kubectl get nodes
+      register: nodes_output
+      changed_when: false
+
+    - name: Show cluster nodes
+      ansible.builtin.debug:
+        msg: "{{ nodes_output.stdout_lines }}"

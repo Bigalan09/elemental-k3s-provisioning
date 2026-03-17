@@ -1,0 +1,37 @@
+---
+# Global variables for all playbooks.
+# Review and update these before running the bootstrap.
+
+# --- K3s ---
+k3s_version: "v1.29.4+k3s1"
+
+# --- Rancher ---
+rancher_hostname: "rancher.lab.internal"
+rancher_bootstrap_password: "admin"
+rancher_replicas: 1
+rancher_chart_repo: "https://releases.rancher.com/server-charts/latest"
+
+# --- Elemental Operator ---
+elemental_chart_repo: "https://charts.rancher.io"
+
+# --- Tailscale (optional — leave blank to skip) ---
+# Create an OAuth client at https://login.tailscale.com/admin/settings/oauth
+tailscale_oauth_client_id: ""
+tailscale_oauth_client_secret: ""
+
+# --- Secrets ---
+# Path to the SSH public key on your MacBook that will be authorised on all nodes.
+ssh_public_key_path: "~/.ssh/id_ed25519.pub"
+
+# --- Repository paths (relative to the repo root) ---
+repo_root: "{{ playbook_dir }}/.."
+scripts_dir: "{{ repo_root }}/scripts"
+clusters_dir: "{{ repo_root }}/clusters/lab"
+dist_dir: "{{ repo_root }}/dist/lab"
+
+# --- Kubeconfig ---
+# Where to save the kubeconfig on the MacBook.
+local_kubeconfig: "~/.kube/lab-cluster.yaml"
+
+# --- Namespace ---
+fleet_namespace: "fleet-default"

@@ -60,6 +60,13 @@ analysis.
 
 For the complete step-by-step guide, see [docs/bootstrap.md](docs/bootstrap.md).
 
+**Automated alternative:** Steps 1–5 and 9–11 can be automated with the Ansible
+runbook. See [docs/ansible.md](docs/ansible.md) or run:
+
+```bash
+cd ansible && ansible-playbook site.yml
+```
+
 ## Documentation
 
 | Document | Description |
@@ -68,6 +75,7 @@ For the complete step-by-step guide, see [docs/bootstrap.md](docs/bootstrap.md).
 | [docs/macbook-setup.md](docs/macbook-setup.md) | macOS tool installation and environment setup |
 | [docs/architecture.md](docs/architecture.md) | Management plane, Elemental flow, Rancher placement decision |
 | [docs/bootstrap.md](docs/bootstrap.md) | End-to-end guide: MacBook to running cluster |
+| [docs/ansible.md](docs/ansible.md) | Ansible runbook: automate the bootstrap with playbooks |
 | [docs/tailscale.md](docs/tailscale.md) | Tailscale ingress: access the cluster from anywhere on your tailnet |
 | [docs/operations.md](docs/operations.md) | Day-2 operations: updates, scaling, secrets, backups |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | Common problems and resolution steps |
@@ -75,6 +83,10 @@ For the complete step-by-step guide, see [docs/bootstrap.md](docs/bootstrap.md).
 ## Repository structure
 
 ```
+ansible/                  # Ansible runbook for automated provisioning
+  inventory/              # Host inventory (IPs and roles)
+  playbooks/              # Numbered playbooks for each bootstrap stage
+  group_vars/             # Global variables (versions, hostnames, credentials)
 clusters/
   lab/                    # Cluster config for the homelab
     tailscale/            # Tailscale ingress resources and operator values
@@ -159,7 +171,7 @@ reference. See [docs/bootstrap.md](docs/bootstrap.md) for setup instructions.
 Install the required tools (see [docs/macbook-setup.md](docs/macbook-setup.md) for details):
 
 ```bash
-brew install yq shellcheck yamllint kubeconform kubectl helm jq
+brew install yq shellcheck yamllint kubeconform kubectl helm jq ansible
 ```
 
 Render all lab nodes:
