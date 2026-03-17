@@ -53,6 +53,7 @@ analysis.
 8. **Boot each machine** — USB boot, Elemental registers and installs the OS
 9. **Assign K3s roles** — apply the rendered node-role configs
 10. **Verify the cluster** — `kubectl get nodes` shows all four machines
+11. **Enable Tailscale ingress** — install the Tailscale operator and expose the cluster on your tailnet
 
 For the complete step-by-step guide, see [docs/bootstrap.md](docs/bootstrap.md).
 
@@ -64,6 +65,7 @@ For the complete step-by-step guide, see [docs/bootstrap.md](docs/bootstrap.md).
 | [docs/macbook-setup.md](docs/macbook-setup.md) | macOS tool installation and environment setup |
 | [docs/architecture.md](docs/architecture.md) | Management plane, Elemental flow, Rancher placement decision |
 | [docs/bootstrap.md](docs/bootstrap.md) | End-to-end guide: MacBook to running cluster |
+| [docs/tailscale.md](docs/tailscale.md) | Tailscale ingress: access the cluster from anywhere on your tailnet |
 | [docs/operations.md](docs/operations.md) | Day-2 operations: updates, scaling, secrets, backups |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | Common problems and resolution steps |
 
@@ -72,6 +74,7 @@ For the complete step-by-step guide, see [docs/bootstrap.md](docs/bootstrap.md).
 ```
 clusters/
   lab/                    # Lab environment cluster config (the homelab)
+    tailscale/            # Tailscale ingress resources and operator values
   staging/                # Staging environment cluster config
   production/             # Production environment cluster config
 nodes/
@@ -192,8 +195,9 @@ The following must exist before using this repository:
 | Elemental bootable ISO or OCI image | Downloaded or built externally |
 | SSH authorised keys (Kubernetes Secret) | Created manually during bootstrap |
 | Cluster registration token (Kubernetes Secret) | Created manually during bootstrap |
-| DNS and network configuration | Home router / manual setup |
-| Tailscale auth key (Kubernetes Secret, if used) | External |
+| Tailscale Kubernetes operator (optional) | Helm install documented in [docs/tailscale.md](docs/tailscale.md) |
+| Tailscale OAuth client credentials | Created in Tailscale admin console |
+| DNS and network configuration | Home router / manual setup (or Tailscale MagicDNS) |
 
 ## Scope
 

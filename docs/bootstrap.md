@@ -396,7 +396,51 @@ All pods in `kube-system`, `cattle-system`, and `cattle-elemental-system` should
 kubectl cluster-info --kubeconfig ~/.kube/lab-cluster.yaml
 ```
 
-## Step 12: Post-bootstrap state
+## Step 12: Enable Tailscale ingress (optional but recommended)
+
+Expose the cluster on your Tailscale tailnet so you can access it from anywhere.
+
+### Install the Tailscale Kubernetes operator
+
+```bash
+helm repo add tailscale https://pkgs.tailscale.com/helmcharts
+helm repo update
+
+helm upgrade --install tailscale-operator tailscale/tailscale-operator \
+  --namespace tailscale-system \
+  --create-namespace \
+  --set-string oauth.clientId="<your-oauth-client-id>" \
+  --set-string oauth.clientSecret="<your-oauth-client-secret>" \
+  --set-string apiServerProxyConfig.mode="true" \
+  --wait
+```
+
+### Apply the Tailscale ingress resources
+
+```bash
+kubectl apply -f clusters/lab/tailscale/ingress-rancher.yaml
+kubectl apply -f clusters/lab/tailscale/apiserver-proxy.yaml
+```
+
+### Verify tailnet access
+
+```bash
+# From your MacBook (on any network)
+tailscale ping k3s-api-lab
+tailscale ping rancher-lab
+
+# Access Rancher
+open "https://rancher-lab.<tailnet-name>.ts.net"
+
+# Use kubectl via tailnet
+kubectl get nodes --server="https://k3s-api-lab.<tailnet-name>.ts.net:443" \
+  --insecure-skip-tls-verify
+```
+
+For the full Tailscale setup guide including OAuth client creation, ACL configuration,
+and troubleshooting, see [docs/tailscale.md](tailscale.md).
+
+## Step 13: Post-bootstrap state
 
 After completing this guide, you have:
 
@@ -407,14 +451,18 @@ After completing this guide, you have:
 | Rancher | Running | mini-pc (cattle-system namespace) |
 | Elemental Operator | Running | mini-pc (cattle-elemental-system namespace) |
 | cert-manager | Running | mini-pc (cert-manager namespace) |
+| Tailscale operator | Running (if enabled) | mini-pc (tailscale-system namespace) |
 | Node definitions | In this repo | `nodes/lab/` |
 | Rendered artefacts | In this repo | `dist/lab/` (gitignored) |
 | kubeconfig | On your MacBook | `~/.kube/lab-cluster.yaml` |
+| Tailnet access | Via Tailscale | `k3s-api-lab.ts.net`, `rancher-lab.ts.net` |
 | SSH access | Via key pair | MacBook → all nodes |
 
 ### What to do next
 
 - **Commit your changes.** If you modified any node definitions, push them to the repo.
+- **Enable Tailscale ingress.** If you have not already, follow step 12 or the full
+  guide at [docs/tailscale.md](tailscale.md) to expose the cluster on your tailnet.
 - **Set up backups.** Take an initial etcd snapshot on the mini PC:
 
   ```bash
@@ -434,4 +482,5 @@ stores real secret values.
 |--------|--------------|---------------|
 | SSH authorised keys | `sshKeySecretRef` in cluster-config.yaml | `kubectl create secret generic <name> --from-file=...` |
 | Registration token | `registrationTokenSecretRef` in cluster-config.yaml | `kubectl create secret generic <name> --from-literal=...` |
+| Tailscale OAuth credentials | Tailscale operator Helm install | `kubectl create secret generic operator-oauth ...` |
 | Tailscale auth key | `tailscale.authKeySecretName` in node definitions | `kubectl create secret generic <name> --from-literal=...` |

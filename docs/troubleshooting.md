@@ -315,6 +315,83 @@ kubectl logs -n cattle-elemental-system -l app=elemental-operator --tail=50
 
 If the operator crashed, check for resource constraints or configuration issues.
 
+## Tailscale ingress issues
+
+### Tailscale operator pod not starting
+
+**Symptom:** The operator pod in `tailscale-system` is in `CrashLoopBackOff` or
+`Error` state.
+
+**Fix:**
+
+```bash
+kubectl describe pod -n tailscale-system -l app=tailscale-operator
+kubectl logs -n tailscale-system -l app=tailscale-operator --tail=50
+```
+
+Common causes:
+
+- OAuth client ID or secret is wrong — recreate the secret
+- The OAuth client lacks required scopes (`devices:read`, `devices:write`)
+- The cluster cannot reach `controlplane.tailscale.com` (check internet access)
+
+### Tailscale ingress not getting an address
+
+**Symptom:** `kubectl get ingress -n cattle-system` shows no address for
+`rancher-tailscale`.
+
+**Fix:**
+
+```bash
+kubectl describe ingress rancher-tailscale -n cattle-system
+kubectl get pods -n tailscale-system
+```
+
+The operator creates a proxy pod for each ingress. If no proxy pod exists, check
+the operator logs for errors. Verify the `ingressClassName: tailscale` is correct.
+
+### Device not appearing in tailnet
+
+**Symptom:** The Tailscale admin console does not show `k3s-api-lab` or
+`rancher-lab` devices.
+
+**Fix:**
+
+1. Check operator logs for authentication errors
+2. Verify ACL tags exist in your Tailscale policy (`tag:k8s`, `tag:k8s-api`)
+3. Ensure the OAuth client has the `devices:write` scope
+
+### kubectl works on LAN but not via tailnet
+
+**Checklist:**
+
+1. Is Tailscale running on your MacBook? `tailscale status`
+2. Can you ping the API proxy? `tailscale ping k3s-api-lab`
+3. Do your Tailscale ACLs allow traffic from your MacBook to `tag:k8s-api`?
+4. Is the `k3s-api-tailscale-lb` service healthy?
+
+   ```bash
+   kubectl get svc k3s-api-tailscale-lb -n default
+   kubectl get endpoints k3s-api-tailscale-lb -n default
+   ```
+
+### Tailscale certificate errors
+
+**Symptom:** kubectl or browser shows TLS certificate warnings when accessing via
+tailnet.
+
+**Fix:** The Tailscale proxy uses tailnet-issued certificates. For kubectl, use
+`--insecure-skip-tls-verify` or configure the cluster entry without a CA:
+
+```bash
+kubectl config set-cluster lab-tailscale \
+  --server="https://k3s-api-lab.<tailnet-name>.ts.net:443" \
+  --insecure-skip-tls-verify=true
+```
+
+For the Rancher UI in a browser, accept the self-signed certificate or configure
+Tailscale HTTPS certificates in your tailnet settings.
+
 ## USB boot problems
 
 ### Machine does not boot from USB

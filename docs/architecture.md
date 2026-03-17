@@ -113,8 +113,9 @@ Node roles (`server` or `agent`) are declared in the node definition files under
 | K3s control plane | On the cluster (`mini-pc`) |
 | K3s agent | On each worker node |
 | Secret management | Kubernetes Secrets in the cluster |
+| Tailscale operator | On the cluster (exposes services to the tailnet) |
 | OS image building | External (not managed by this repo) |
-| DNS and networking | Home network (router, DHCP) |
+| DNS and networking | Home network (router, DHCP) or Tailscale MagicDNS |
 
 ## What lives where
 
@@ -160,7 +161,27 @@ Secrets in the cluster.
 |-------------|---------------------|
 | SSH authorised keys | `sshKeySecretRef` in cluster-config.yaml or per-node override |
 | Registration token | `registrationTokenSecretRef` in cluster-config.yaml |
+| Tailscale OAuth credentials | Kubernetes Secret in `tailscale-system` namespace |
 | Tailscale auth key | `tailscale.authKeySecretName` in node definitions (when enabled) |
+
+## Tailscale tailnet access
+
+The cluster is accessible from anywhere on your Tailscale tailnet via the Tailscale
+Kubernetes operator. The operator runs inside the cluster and creates proxy pods that
+act as Tailscale nodes, exposing cluster services with MagicDNS hostnames.
+
+**What is exposed:**
+
+| Service | Tailnet hostname | How |
+|---------|-----------------|-----|
+| Rancher UI | `rancher-lab.<tailnet>.ts.net` | `Ingress` with `ingressClassName: tailscale` |
+| K3s API server | `k3s-api-lab.<tailnet>.ts.net` | `Service` with `loadBalancerClass: tailscale` |
+
+This means you can run `kubectl` and access the Rancher UI from your MacBook on any
+network — not just the home LAN. Nothing is exposed to the public internet.
+
+The ingress resources live in `clusters/lab/tailscale/` and the full setup guide is
+in [docs/tailscale.md](tailscale.md).
 
 ---
 
