@@ -4,6 +4,9 @@ Private infrastructure repository for provisioning a homelab K3s cluster using
 Rancher Elemental. This repo defines node inventory, cluster configuration,
 rendering templates, and validation — all managed from a MacBook.
 
+The cluster runs homelab services such as Pi-hole, Actual Budget, and anything
+else deployed as containers.
+
 ## Homelab hardware
 
 | Device | Hostname | Role | Notes |
@@ -73,20 +76,20 @@ For the complete step-by-step guide, see [docs/bootstrap.md](docs/bootstrap.md).
 
 ```
 clusters/
-  lab/                    # Lab environment cluster config (the homelab)
+  lab/                    # Cluster config for the homelab
     tailscale/            # Tailscale ingress resources and operator values
-  staging/                # Staging environment cluster config
-  production/             # Production environment cluster config
 nodes/
-  examples/               # Reference node definitions (not live inventory)
-  lab/                    # Live lab node inventory (mini-pc, zimablade, zimaboard-1, zimaboard-2)
-  staging/                # Live staging node inventory
-  production/             # Live production node inventory
+  examples/               # Reference node definitions (templates for creating new nodes)
+  lab/                    # Live node inventory (mini-pc, zimablade, zimaboard-1, zimaboard-2)
 templates/                # Reusable rendering templates
 scripts/                  # Render and validate scripts
 dist/                     # Rendered artefacts (gitignored)
 docs/                     # Architecture, bootstrap, and operational docs
 ```
+
+This is a single-cluster homelab. There is one environment (`lab`) with one
+control plane and three workers. The `examples/` directory provides reference
+node definitions showing the available fields — it is not a live environment.
 
 ## Roles
 
@@ -97,7 +100,7 @@ docs/                     # Architecture, bootstrap, and operational docs
 
 ## Node definition structure
 
-Each file in `nodes/<environment>/` defines a single node:
+Each file in `nodes/lab/` defines a single node:
 
 ```yaml
 hostname: mini-pc
@@ -171,13 +174,7 @@ Render a single node:
 bash scripts/render.sh nodes/lab/mini-pc.yaml
 ```
 
-Render all nodes across all environments:
-
-```bash
-bash scripts/render.sh --all
-```
-
-Rendered output is written to `dist/<environment>/<hostname>/`.
+Rendered output is written to `dist/lab/<hostname>/`.
 
 ## GitHub Actions workflows
 

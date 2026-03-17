@@ -70,18 +70,19 @@ configuration. It:
   YAML files, and rendered artefacts
 - Runs CI via GitHub Actions on every push and PR
 
-## Environments
+## Single-cluster design
 
-The repository supports multiple environments (lab, staging, production), each with
-independent:
+This is a single-cluster homelab. There is one environment (`lab`) with its own:
 
-- Cluster configuration (`clusters/<env>/cluster-config.yaml`)
-- MachineRegistration defaults (`clusters/<env>/machine-registration.yaml`)
-- Node pool definitions (`clusters/<env>/node-pools.yaml`)
-- Node inventory (`nodes/<env>/`)
+- Cluster configuration (`clusters/lab/cluster-config.yaml`)
+- MachineRegistration defaults (`clusters/lab/machine-registration.yaml`)
+- Node pool definitions (`clusters/lab/node-pools.yaml`)
+- Tailscale ingress resources (`clusters/lab/tailscale/`)
+- Node inventory (`nodes/lab/`)
 
-The homelab uses the `lab` environment. Staging and production environments are
-available for future use.
+The `nodes/examples/` directory provides reference node definitions showing all
+available fields. It is not a live environment — it exists so you can see the
+full schema when creating new nodes.
 
 ## Hostname assignment
 

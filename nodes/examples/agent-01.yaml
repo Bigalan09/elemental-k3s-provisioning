@@ -1,9 +1,11 @@
 ---
+# Example worker (agent) node definition.
+# Copy this file to nodes/lab/ and customise for your hardware.
 hostname: agent-01
 role: agent
 installDevice: /dev/sda
-environment: production
-registrationGroup: production-registration
+environment: lab
+registrationGroup: lab-registration
 
 labels:
   node-type: worker
@@ -12,7 +14,7 @@ taints: []
 
 # SSH keys are managed externally via Kubernetes Secrets.
 # sshKeySecretRef:
-#   name: production-ssh-authorized-keys
+#   name: lab-ssh-authorized-keys
 #   namespace: fleet-default
 
 tailscale:

@@ -1,9 +1,12 @@
 ---
+# Example second server node definition.
+# In this homelab there is only one server (mini-pc), but this shows
+# what a second server would look like if you ever expand.
 hostname: server-02
 role: server
 installDevice: /dev/sda
-environment: production
-registrationGroup: production-registration
+environment: lab
+registrationGroup: lab-registration
 
 labels:
   node-type: control-plane
@@ -14,7 +17,7 @@ taints:
 
 # SSH keys are managed externally via Kubernetes Secrets.
 # sshKeySecretRef:
-#   name: production-ssh-authorized-keys
+#   name: lab-ssh-authorized-keys
 #   namespace: fleet-default
 
 tailscale:
