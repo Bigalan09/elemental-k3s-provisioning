@@ -2,14 +2,23 @@
 hostname: server-01
 role: server
 installDevice: /dev/sda
+environment: production
+registrationGroup: production-registration
 
 labels:
-  environment: production
   node-type: control-plane
 
 taints:
   - key: node-role.kubernetes.io/control-plane
     effect: NoSchedule
 
-sshAuthorizedKeys:
-  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExamplePublicKeyForServer01 ops@management"
+# SSH keys are managed externally via Kubernetes Secrets.
+# The secret name is resolved from the cluster config for this environment.
+# Override per node only if this node requires a different key set.
+# sshKeySecretRef:
+#   name: production-ssh-authorized-keys
+#   namespace: fleet-default
+
+tailscale:
+  enabled: false
+  # authKeySecretName: tailscale-auth-key

@@ -6,6 +6,11 @@ metadata:
   namespace: fleet-default
   labels:
     elemental.cattle.io/hostname: placeholder
+  annotations:
+    # sshKeySecretRef records the Kubernetes Secret that should supply SSH
+    # authorised keys at apply time. The render script populates this from the
+    # cluster config or from a per-node override.
+    elemental.cattle.io/ssh-key-secret: ""
 spec:
   # machineInventoryLabels are applied to MachineInventory resources created when a node registers.
   machineInventoryLabels:
@@ -15,6 +20,8 @@ spec:
     cloud-init:
       users:
         - name: root
+          # SSH authorised keys are injected at apply time from the secret
+          # named in the annotation above. Do not embed real keys here.
           ssh_authorized_keys: []
     elemental:
       install:

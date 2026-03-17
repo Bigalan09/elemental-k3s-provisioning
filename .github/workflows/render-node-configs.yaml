@@ -4,10 +4,10 @@ name: Render node configs
 on:
   workflow_dispatch:
     inputs:
-      node_file:
+      target:
         description: >
-          Path to a single node definition file (e.g. nodes/examples/server-01.yaml)
-          or the value "all" to render every example node.
+          Path to a single node definition file (e.g. nodes/examples/server-01.yaml),
+          an environment name (lab, staging, production, examples), or "all".
         required: true
         default: all
 
@@ -32,10 +32,13 @@ jobs:
 
       - name: Render node configs
         run: |
-          if [ "${{ github.event.inputs.node_file }}" = "all" ]; then
+          TARGET="${{ github.event.inputs.target }}"
+          if [ "${TARGET}" = "all" ]; then
             bash scripts/render.sh --all
+          elif [ -f "${TARGET}" ]; then
+            bash scripts/render.sh "${TARGET}"
           else
-            bash scripts/render.sh "${{ github.event.inputs.node_file }}"
+            bash scripts/render.sh --env "${TARGET}"
           fi
 
       - name: Upload rendered artefacts

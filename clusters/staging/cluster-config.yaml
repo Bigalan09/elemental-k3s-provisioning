@@ -1,30 +1,30 @@
 ---
-# Cluster-level configuration for the production K3s cluster.
+# Cluster-level configuration for the staging K3s cluster.
 # This document describes the cluster identity and general settings.
 # Apply this to the Rancher management cluster to define the cluster record.
 
-clusterName: production
+clusterName: staging
 kubernetesVersion: v1.29.4+k3s1
 namespace: fleet-default
 
 # The registration endpoint is provided by Rancher OS Manager after the operator is installed.
-# Replace the placeholder below with the actual registration URL from your management cluster.
-registrationEndpoint: "https://rancher.example.internal/v1/elemental/registration"
+# Replace with the actual registration URL from your management cluster.
+registrationEndpoint: "https://rancher.staging.internal/v1/elemental/registration"
 
 # Token reference for node registration.
 # Create a Kubernetes Secret in the management cluster:
-#   kubectl create secret generic registration-token \
+#   kubectl create secret generic staging-registration-token \
 #     --namespace fleet-default \
 #     --from-literal=token=<your-registration-token>
 registrationTokenSecretRef:
-  name: production-registration-token
+  name: staging-registration-token
   namespace: fleet-default
 
 # SSH key secret reference for all nodes in this environment.
 # Create a Kubernetes Secret containing authorised public keys:
-#   kubectl create secret generic production-ssh-authorized-keys \
+#   kubectl create secret generic staging-ssh-authorized-keys \
 #     --namespace fleet-default \
 #     --from-file=authorized_keys=/path/to/authorized_keys
 sshKeySecretRef:
-  name: production-ssh-authorized-keys
+  name: staging-ssh-authorized-keys
   namespace: fleet-default

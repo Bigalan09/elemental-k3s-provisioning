@@ -46,16 +46,25 @@ while IFS= read -r -d '' script; do
   fi
 done < <(find "${REPO_ROOT}/scripts" -name "*.sh" -print0)
 
+# Collect YAML source directories that exist
+yaml_dirs=()
+for dir in "${REPO_ROOT}/templates" "${REPO_ROOT}/clusters" "${REPO_ROOT}/nodes"; do
+  if [[ -d "${dir}" ]]; then
+    yaml_dirs+=("${dir}")
+  fi
+done
+
 # yamllint all YAML source files
 step "Running yamllint on YAML source files"
-while IFS= read -r -d '' yaml_file; do
-  if yamllint --strict "${yaml_file}"; then
-    pass "yamllint: ${yaml_file}"
-  else
-    fail "yamllint: ${yaml_file}"
-  fi
-done < <(find "${REPO_ROOT}/templates" "${REPO_ROOT}/clusters" "${REPO_ROOT}/nodes" \
-  -name "*.yaml" -print0 2>/dev/null)
+if [[ ${#yaml_dirs[@]} -gt 0 ]]; then
+  while IFS= read -r -d '' yaml_file; do
+    if yamllint --strict "${yaml_file}"; then
+      pass "yamllint: ${yaml_file}"
+    else
+      fail "yamllint: ${yaml_file}"
+    fi
+  done < <(find "${yaml_dirs[@]}" -name "*.yaml" -print0 2>/dev/null)
+fi
 
 # Render all example nodes into dist/ for validation
 step "Rendering example nodes"

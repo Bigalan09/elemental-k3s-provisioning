@@ -10,4 +10,4 @@ metadata:
 spec:
   hostname: placeholder
   role: placeholder
-  cluster: production
+  cluster: placeholder

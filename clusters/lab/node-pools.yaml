@@ -1,0 +1,27 @@
+---
+# Node pool definitions for the lab cluster.
+# These describe the expected composition of server and agent node pools.
+# Actual node registration is driven by Elemental MachineRegistration resources.
+
+nodePools:
+  servers:
+    role: server
+    minNodes: 1
+    maxNodes: 3
+    installDevice: /dev/sda
+    labels:
+      environment: lab
+      node-type: control-plane
+    taints:
+      - key: node-role.kubernetes.io/control-plane
+        effect: NoSchedule
+
+  agents:
+    role: agent
+    minNodes: 1
+    maxNodes: 5
+    installDevice: /dev/sda
+    labels:
+      environment: lab
+      node-type: worker
+    taints: []

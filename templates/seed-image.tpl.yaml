@@ -1,0 +1,21 @@
+---
+apiVersion: elemental.cattle.io/v1beta1
+kind: SeedImage
+metadata:
+  name: placeholder
+  namespace: fleet-default
+  labels:
+    elemental.cattle.io/cluster: placeholder
+spec:
+  # baseImage references the Elemental OS container image used to build the ISO.
+  baseImage: placeholder
+  # registrationRef links this SeedImage to a MachineRegistration resource.
+  registrationRef:
+    apiVersion: elemental.cattle.io/v1beta1
+    kind: MachineRegistration
+    name: placeholder
+    namespace: fleet-default
+  cloud-config:
+    users:
+      - name: root
+        ssh_authorized_keys: []
