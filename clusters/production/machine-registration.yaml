@@ -1,0 +1,38 @@
+---
+# Production MachineRegistration resource.
+# Apply this manifest to the Rancher management cluster (fleet-default namespace).
+#
+# SSH public keys and registration tokens must be provided as Kubernetes Secrets
+# before this resource is created. See docs/bootstrap.md for the full bootstrap flow.
+
+apiVersion: elemental.cattle.io/v1beta1
+kind: MachineRegistration
+metadata:
+  name: production-registration
+  namespace: fleet-default
+  labels:
+    elemental.cattle.io/cluster: production
+spec:
+  machineInventoryLabels:
+    elemental.cattle.io/cluster: production
+    elemental.cattle.io/managed: "true"
+  config:
+    cloud-init:
+      users:
+        - name: root
+          # Replace this placeholder with the actual SSH public key.
+          # Do not store real keys in this file. Inject at apply time or via a Secret.
+          ssh_authorized_keys:
+            - "ssh-ed25519 PLACEHOLDER_SSH_PUBLIC_KEY ops@management"
+    elemental:
+      install:
+        device: /dev/sda
+        reboot: true
+        powerOff: false
+      registration:
+        emulateTPM: false
+  machineInventorySelectorTemplate:
+    spec:
+      selector:
+        matchLabels:
+          elemental.cattle.io/cluster: production

@@ -1,0 +1,46 @@
+---
+name: Render node configs
+
+on:
+  workflow_dispatch:
+    inputs:
+      node_file:
+        description: >
+          Path to a single node definition file (e.g. nodes/examples/server-01.yaml)
+          or the value "all" to render every example node.
+        required: true
+        default: all
+
+jobs:
+  render:
+    name: Render node configuration artefacts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install yq
+        run: |
+          YQ_VERSION="v4.44.1"
+          curl -sSL "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64" \
+            -o /usr/local/bin/yq
+          chmod +x /usr/local/bin/yq
+          yq --version
+
+      - name: Render node configs
+        run: |
+          if [ "${{ github.event.inputs.node_file }}" = "all" ]; then
+            bash scripts/render.sh --all
+          else
+            bash scripts/render.sh "${{ github.event.inputs.node_file }}"
+          fi
+
+      - name: Upload rendered artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-node-configs
+          path: dist/
+          if-no-files-found: error

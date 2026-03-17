@@ -1,0 +1,19 @@
+---
+hostname: server-02
+role: server
+installDevice: /dev/sda
+
+labels:
+  environment: production
+  node-type: control-plane
+
+taints:
+  - key: node-role.kubernetes.io/control-plane
+    effect: NoSchedule
+
+sshAuthorizedKeys:
+  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExamplePublicKeyForServer02 ops@management"
+
+tailscale:
+  enabled: false
+  authKeySecretName: ""
