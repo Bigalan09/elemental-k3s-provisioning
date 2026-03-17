@@ -13,7 +13,3 @@ taints:
 
 sshAuthorizedKeys:
   - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExamplePublicKeyForServer02 ops@management"
-
-tailscale:
-  enabled: false
-  authKeySecretName: ""

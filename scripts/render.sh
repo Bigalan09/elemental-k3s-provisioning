@@ -51,19 +51,12 @@ render_node() {
     exit 1
   fi
 
-  # Read optional fields with safe defaults
-  local tailscale_enabled tailscale_secret
-  tailscale_enabled="$(yq '.tailscale.enabled // "false"' "${node_file}")"
-  tailscale_secret="$(yq '.tailscale.authKeySecretName // ""' "${node_file}")"
-
   # Export environment variables for use by yq strenv() and env()
   # Structured fields (arrays and maps) are exported as compact JSON
   # so that yq can parse them back with from_json.
   export NODE_HOSTNAME="${hostname}"
   export NODE_ROLE="${role}"
   export NODE_INSTALL_DEVICE="${install_device}"
-  export NODE_TAILSCALE_ENABLED="${tailscale_enabled}"
-  export NODE_TAILSCALE_SECRET="${tailscale_secret}"
 
   NODE_SSH_KEYS_JSON="$(yq -o=json -I0 '.sshAuthorizedKeys // []' "${node_file}")"
   export NODE_SSH_KEYS_JSON
