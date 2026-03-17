@@ -183,9 +183,9 @@ render_node() {
 
   # Render seed-image config
   local cluster_name="${env_name}"
-  local reg_name="${registration_group:-${env_name}-registration}"
+  local registration_name="${registration_group:-${env_name}-registration}"
   export NODE_CLUSTER_NAME="${cluster_name}"
-  export NODE_REG_NAME="${reg_name}"
+  export NODE_REG_NAME="${registration_name}"
 
   yq --prettyPrint '
     .metadata.name = (strenv(NODE_HOSTNAME) + "-seed") |
@@ -207,14 +207,18 @@ render_environment() {
   fi
 
   local count=0
+  local found_files=false
   for node_file in "${nodes_dir}"/*.yaml; do
     if [[ ! -f "${node_file}" ]]; then
-      echo "WARNING: No node definition files found in ${nodes_dir}/" >&2
       break
     fi
+    found_files=true
     render_node "${node_file}"
     count=$((count + 1))
   done
+  if [[ "${found_files}" == "false" ]]; then
+    echo "WARNING: No node definition files found in ${nodes_dir}/" >&2
+  fi
   echo "Rendered ${count} node(s) for environment: ${env_name}"
 }
 
