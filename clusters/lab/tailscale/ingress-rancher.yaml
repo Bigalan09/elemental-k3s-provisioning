@@ -1,0 +1,29 @@
+---
+# Tailscale Ingress for the Rancher UI.
+# Exposes Rancher on the tailnet as https://rancher-lab.<tailnet-name>.ts.net
+#
+# Prerequisites:
+#   - Tailscale Kubernetes operator installed (see docs/tailscale.md)
+#   - Rancher running in the cattle-system namespace
+#   - An OAuth client or auth key configured in the operator
+#
+# Apply to the lab cluster:
+#   kubectl apply -f clusters/lab/tailscale/ingress-rancher.yaml
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rancher-tailscale
+  namespace: cattle-system
+  annotations:
+    tailscale.com/funnel: "false"
+spec:
+  ingressClassName: tailscale
+  defaultBackend:
+    service:
+      name: rancher
+      port:
+        number: 443
+  tls:
+    - hosts:
+        - rancher-lab

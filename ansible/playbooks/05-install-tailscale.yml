@@ -1,0 +1,127 @@
+---
+# 05-install-tailscale.yml — Install the Tailscale Kubernetes operator and apply ingress resources.
+#
+# This playbook is skipped if tailscale_oauth_client_id is not set.
+#
+# Usage:
+#   cd ansible
+#   ansible-playbook playbooks/05-install-tailscale.yml
+
+- name: Install Tailscale operator and ingress
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  environment:
+    KUBECONFIG: "{{ local_kubeconfig }}"
+  tasks:
+    - name: Check if Tailscale credentials are configured
+      ansible.builtin.set_fact:
+        tailscale_enabled: "{{ (tailscale_oauth_client_id | default('') | length > 0) and (tailscale_oauth_client_secret | default('') | length > 0) }}"
+
+    - name: Skip Tailscale setup if credentials not configured
+      when: not tailscale_enabled
+      ansible.builtin.debug:
+        msg: >-
+          Tailscale OAuth credentials not set in group_vars/all.yml. Skipping
+          Tailscale operator installation. Set tailscale_oauth_client_id and
+          tailscale_oauth_client_secret to enable.
+
+    # --- Install operator ---
+    - name: Add Tailscale Helm repo
+      when: tailscale_enabled
+      ansible.builtin.command:
+        cmd: helm repo add tailscale https://pkgs.tailscale.com/helmcharts
+      register: helm_add_ts
+      changed_when: "'has been added' in helm_add_ts.stdout"
+      failed_when: "helm_add_ts.rc != 0 and 'already exists' not in helm_add_ts.stderr"
+
+    - name: Update Helm repos
+      when: tailscale_enabled
+      ansible.builtin.command:
+        cmd: helm repo update
+      changed_when: false
+
+    - name: Install Tailscale operator
+      when: tailscale_enabled
+      ansible.builtin.command:
+        cmd: >-
+          helm upgrade --install tailscale-operator tailscale/tailscale-operator
+          --namespace tailscale-system
+          --create-namespace
+          --set-string oauth.clientId={{ tailscale_oauth_client_id }}
+          --set-string oauth.clientSecret={{ tailscale_oauth_client_secret }}
+          --set-string apiServerProxyConfig.mode=true
+          --wait
+          --timeout=180s
+      register: ts_install
+      changed_when: "'has been installed' in ts_install.stdout or 'has been upgraded' in ts_install.stdout"
+
+    - name: Wait for Tailscale operator
+      when: tailscale_enabled
+      ansible.builtin.command:
+        cmd: >-
+          kubectl rollout status deployment tailscale-operator
+          -n tailscale-system --timeout=120s
+      changed_when: false
+
+    - name: Show Tailscale operator pods
+      when: tailscale_enabled
+      ansible.builtin.command:
+        cmd: kubectl get pods -n tailscale-system
+      register: ts_pods
+      changed_when: false
+
+    - name: Display operator pods
+      when: tailscale_enabled
+      ansible.builtin.debug:
+        msg: "{{ ts_pods.stdout_lines }}"
+
+    # --- Apply ingress resources ---
+    - name: Apply Rancher Tailscale ingress
+      when: tailscale_enabled
+      ansible.builtin.command:
+        cmd: kubectl apply -f {{ clusters_dir }}/tailscale/ingress-rancher.yaml
+      register: apply_rancher_ingress
+      changed_when: "'created' in apply_rancher_ingress.stdout or 'configured' in apply_rancher_ingress.stdout"
+
+    - name: Apply K3s API server Tailscale proxy
+      when: tailscale_enabled
+      ansible.builtin.command:
+        cmd: kubectl apply -f {{ clusters_dir }}/tailscale/apiserver-proxy.yaml
+      register: apply_api_proxy
+      changed_when: "'created' in apply_api_proxy.stdout or 'configured' in apply_api_proxy.stdout"
+
+    - name: Show Tailscale ingress status
+      when: tailscale_enabled
+      ansible.builtin.command:
+        cmd: kubectl get ingress -A
+      register: ingress_list
+      changed_when: false
+
+    - name: Display ingress resources
+      when: tailscale_enabled
+      ansible.builtin.debug:
+        msg: "{{ ingress_list.stdout_lines }}"
+
+    - name: Show Tailscale services
+      when: tailscale_enabled
+      ansible.builtin.command:
+        cmd: kubectl get svc -A -l tailscale.com/managed=true
+      register: ts_svc
+      changed_when: false
+      failed_when: false
+
+    - name: Display Tailscale services
+      when: tailscale_enabled and ts_svc.rc == 0
+      ansible.builtin.debug:
+        msg: "{{ ts_svc.stdout_lines }}"
+
+    - name: Tailscale setup complete
+      when: tailscale_enabled
+      ansible.builtin.debug:
+        msg:
+          - "Tailscale operator and ingress resources have been applied."
+          - "Check your Tailscale admin console for new devices:"
+          - "  - rancher-lab (Rancher UI)"
+          - "  - k3s-api-lab (Kubernetes API)"
+          - "See docs/tailscale.md for usage and troubleshooting."

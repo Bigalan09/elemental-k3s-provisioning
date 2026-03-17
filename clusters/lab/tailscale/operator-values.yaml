@@ -1,0 +1,34 @@
+---
+# Tailscale operator Helm values for the lab cluster.
+#
+# These values are used when installing the Tailscale Kubernetes operator.
+# See docs/tailscale.md for the full installation guide.
+#
+# Usage:
+#   helm install tailscale-operator tailscale/tailscale-operator \
+#     --namespace tailscale-system \
+#     --create-namespace \
+#     --values clusters/lab/tailscale/operator-values.yaml
+
+# OAuth client credentials — create at https://login.tailscale.com/admin/settings/oauth
+# Then store as a Kubernetes secret before helm install:
+#   kubectl create secret generic tailscale-operator-oauth \
+#     --namespace tailscale-system \
+#     --from-literal=client_id=<your-oauth-client-id> \
+#     --from-literal=client_secret=<your-oauth-client-secret>
+oauth:
+  clientId: ""
+  clientSecret: ""
+
+operatorConfig:
+  # The hostname prefix for the operator's own tailnet node.
+  hostname: "ts-operator-lab"
+  logging: info
+
+# Enable the Tailscale proxy for Ingress resources.
+proxyConfig:
+  defaultTags: "tag:k8s"
+
+# Namespace where the operator watches for Tailscale resources.
+# Empty means all namespaces.
+namespaceSelector: {}

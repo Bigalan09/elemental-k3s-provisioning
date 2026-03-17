@@ -1,0 +1,122 @@
+---
+# 04-render-and-apply.yml — Render node configs and apply registration resources.
+#
+# This playbook:
+# 1. Runs scripts/render.sh --env lab to produce artefacts in dist/lab/
+# 2. Applies the environment-level MachineRegistration
+# 3. Applies per-node registrations and role configs
+#
+# Usage:
+#   cd ansible
+#   ansible-playbook playbooks/04-render-and-apply.yml
+
+- name: Render and apply node configurations
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  environment:
+    KUBECONFIG: "{{ local_kubeconfig }}"
+  tasks:
+    # --- Render ---
+    - name: Check render script exists
+      ansible.builtin.stat:
+        path: "{{ scripts_dir }}/render.sh"
+      register: render_script
+
+    - name: Fail if render script missing
+      when: not render_script.stat.exists
+      ansible.builtin.fail:
+        msg: "render.sh not found at {{ scripts_dir }}/render.sh"
+
+    - name: Render all lab node configurations
+      ansible.builtin.command:
+        cmd: bash {{ scripts_dir }}/render.sh --env lab
+        chdir: "{{ repo_root }}"
+      register: render_output
+      changed_when: true
+
+    - name: Show render output
+      ansible.builtin.debug:
+        msg: "{{ render_output.stdout_lines }}"
+
+    # --- Apply environment-level MachineRegistration ---
+    - name: Apply lab MachineRegistration
+      ansible.builtin.command:
+        cmd: kubectl apply -f {{ clusters_dir }}/machine-registration.yaml
+      register: apply_mr
+      changed_when: "'created' in apply_mr.stdout or 'configured' in apply_mr.stdout"
+
+    - name: Show MachineRegistration apply result
+      ansible.builtin.debug:
+        msg: "{{ apply_mr.stdout }}"
+
+    # --- Apply per-node resources ---
+    - name: Find rendered node directories
+      ansible.builtin.find:
+        paths: "{{ dist_dir }}"
+        file_type: directory
+      register: node_dirs
+
+    - name: Apply per-node MachineRegistration
+      loop: "{{ node_dirs.files }}"
+      loop_control:
+        label: "{{ item.path | basename }}"
+      ansible.builtin.command:
+        cmd: kubectl apply -f {{ item.path }}/machine-registration.yaml
+      register: apply_node_mr
+      changed_when: "'created' in apply_node_mr.stdout or 'configured' in apply_node_mr.stdout"
+
+    - name: Apply per-node role configs
+      loop: "{{ node_dirs.files }}"
+      loop_control:
+        label: "{{ item.path | basename }}"
+      ansible.builtin.command:
+        cmd: kubectl apply -f {{ item.path }}/node-role.yaml
+      register: apply_node_role
+      changed_when: "'created' in apply_node_role.stdout or 'configured' in apply_node_role.stdout"
+
+    - name: Apply per-node cluster-node configs
+      loop: "{{ node_dirs.files }}"
+      loop_control:
+        label: "{{ item.path | basename }}"
+      ansible.builtin.command:
+        cmd: kubectl apply -f {{ item.path }}/cluster-node.yaml
+      register: apply_cluster_node
+      changed_when: "'created' in apply_cluster_node.stdout or 'configured' in apply_cluster_node.stdout"
+
+    # --- Verify ---
+    - name: List MachineRegistrations
+      ansible.builtin.command:
+        cmd: kubectl get machineregistration -n {{ fleet_namespace }}
+      register: mr_list
+      changed_when: false
+
+    - name: Show MachineRegistrations
+      ansible.builtin.debug:
+        msg: "{{ mr_list.stdout_lines }}"
+
+    - name: Get registration URL
+      ansible.builtin.command:
+        cmd: >-
+          kubectl get machineregistration lab-registration
+          -n {{ fleet_namespace }}
+          -o jsonpath='{.status.registrationURL}'
+      register: reg_url
+      changed_when: false
+      failed_when: false
+
+    - name: Show registration URL
+      ansible.builtin.debug:
+        msg: >-
+          Registration URL: {{ reg_url.stdout | default('Not yet available — the Elemental Operator
+          may need a moment to generate it.') }}
+
+    - name: Remind operator about next steps
+      ansible.builtin.debug:
+        msg:
+          - "Node configurations have been rendered and applied."
+          - "Next steps:"
+          - "  1. Obtain the Elemental ISO with the registration URL embedded"
+          - "  2. Write the ISO to USB (see docs/macbook-setup.md)"
+          - "  3. Boot each worker machine from USB"
+          - "  4. Monitor registration: kubectl get machineinventory -n {{ fleet_namespace }} -w"

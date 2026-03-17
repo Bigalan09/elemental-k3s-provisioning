@@ -1,0 +1,29 @@
+---
+# site.yml — Master playbook that runs the full bootstrap sequence.
+#
+# Usage:
+#   cd ansible
+#   ansible-playbook site.yml
+#
+# You can also run individual stages:
+#   ansible-playbook playbooks/01-bootstrap-k3s.yml
+#   ansible-playbook playbooks/02-install-rancher.yml
+#   ...
+
+- name: "Stage 1: Bootstrap K3s on the control plane"
+  ansible.builtin.import_playbook: playbooks/01-bootstrap-k3s.yml
+
+- name: "Stage 2: Install Rancher and Elemental Operator"
+  ansible.builtin.import_playbook: playbooks/02-install-rancher.yml
+
+- name: "Stage 3: Create Kubernetes secrets"
+  ansible.builtin.import_playbook: playbooks/03-create-secrets.yml
+
+- name: "Stage 4: Render and apply node configurations"
+  ansible.builtin.import_playbook: playbooks/04-render-and-apply.yml
+
+- name: "Stage 5: Install Tailscale operator and ingress"
+  ansible.builtin.import_playbook: playbooks/05-install-tailscale.yml
+
+- name: "Stage 6: Verify cluster health"
+  ansible.builtin.import_playbook: playbooks/06-verify-cluster.yml

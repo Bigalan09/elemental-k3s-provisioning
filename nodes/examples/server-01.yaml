@@ -1,9 +1,11 @@
 ---
+# Example server (control plane) node definition.
+# Copy this file to nodes/lab/ and customise for your hardware.
 hostname: server-01
 role: server
 installDevice: /dev/sda
-environment: production
-registrationGroup: production-registration
+environment: lab
+registrationGroup: lab-registration
 
 labels:
   node-type: control-plane
@@ -16,7 +18,7 @@ taints:
 # The secret name is resolved from the cluster config for this environment.
 # Override per node only if this node requires a different key set.
 # sshKeySecretRef:
-#   name: production-ssh-authorized-keys
+#   name: lab-ssh-authorized-keys
 #   namespace: fleet-default
 
 tailscale:

@@ -1,7 +1,5 @@
 ---
-# Example worker (agent) node definition.
-# Copy this file to nodes/lab/ and customise for your hardware.
-hostname: agent-01
+hostname: zimablade
 role: agent
 installDevice: /dev/sda
 environment: lab
@@ -13,6 +11,7 @@ labels:
 taints: []
 
 # SSH keys are managed externally via Kubernetes Secrets.
+# Defaults to the environment-level sshKeySecretRef from cluster-config.yaml.
 # sshKeySecretRef:
 #   name: lab-ssh-authorized-keys
 #   namespace: fleet-default

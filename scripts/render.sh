@@ -2,9 +2,8 @@
 # render.sh - Render Elemental node configuration artefacts from templates and node definition files.
 #
 # Usage:
-#   bash scripts/render.sh nodes/examples/server-01.yaml        # render a single node
+#   bash scripts/render.sh nodes/lab/mini-pc.yaml               # render a single node
 #   bash scripts/render.sh --env lab                             # render all nodes in nodes/lab/
-#   bash scripts/render.sh --env production                      # render all nodes in nodes/production/
 #   bash scripts/render.sh --all                                 # render all nodes across all environments
 
 set -euo pipefail
@@ -13,7 +12,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TEMPLATES_DIR="${REPO_ROOT}/templates"
 DIST_DIR="${REPO_ROOT}/dist"
 
-VALID_ENVS=("lab" "staging" "production" "examples")
+VALID_ENVS=("lab" "examples")
 
 if ! command -v yq &>/dev/null; then
   echo "ERROR: yq is required but not found in PATH. Install yq v4 before running this script." >&2
@@ -224,7 +223,7 @@ render_environment() {
 
 usage() {
   echo "Usage: $0 <node-file.yaml>" >&2
-  echo "       $0 --env <environment>   (lab|staging|production|examples)" >&2
+  echo "       $0 --env <environment>   (lab|examples)" >&2
   echo "       $0 --all                 (render all environments)" >&2
   exit 1
 }

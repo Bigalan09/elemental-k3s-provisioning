@@ -1,18 +1,19 @@
 ---
-# Example worker (agent) node definition.
-# Copy this file to nodes/lab/ and customise for your hardware.
-hostname: agent-01
-role: agent
+hostname: mini-pc
+role: server
 installDevice: /dev/sda
 environment: lab
 registrationGroup: lab-registration
 
 labels:
-  node-type: worker
+  node-type: control-plane
 
-taints: []
+taints:
+  - key: node-role.kubernetes.io/control-plane
+    effect: NoSchedule
 
 # SSH keys are managed externally via Kubernetes Secrets.
+# Defaults to the environment-level sshKeySecretRef from cluster-config.yaml.
 # sshKeySecretRef:
 #   name: lab-ssh-authorized-keys
 #   namespace: fleet-default

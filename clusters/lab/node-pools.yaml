@@ -1,13 +1,14 @@
 ---
 # Node pool definitions for the lab cluster.
-# These describe the expected composition of server and agent node pools.
+# This homelab uses one control plane (mini-pc) and three workers
+# (zimablade, zimaboard-1, zimaboard-2).
 # Actual node registration is driven by Elemental MachineRegistration resources.
 
 nodePools:
   servers:
     role: server
     minNodes: 1
-    maxNodes: 3
+    maxNodes: 1
     installDevice: /dev/sda
     labels:
       environment: lab
@@ -18,8 +19,8 @@ nodePools:
 
   agents:
     role: agent
-    minNodes: 1
-    maxNodes: 5
+    minNodes: 3
+    maxNodes: 3
     installDevice: /dev/sda
     labels:
       environment: lab

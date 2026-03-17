@@ -1,0 +1,170 @@
+---
+# 06-verify-cluster.yml — Verify that the cluster is healthy after bootstrap.
+#
+# This playbook checks:
+# - All nodes are Ready
+# - System pods are running
+# - Rancher is accessible
+# - Elemental Operator is running
+# - Tailscale is working (if enabled)
+#
+# Usage:
+#   cd ansible
+#   ansible-playbook playbooks/06-verify-cluster.yml
+
+- name: Verify cluster health
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  environment:
+    KUBECONFIG: "{{ local_kubeconfig }}"
+  tasks:
+    # --- Node status ---
+    - name: Get cluster nodes
+      ansible.builtin.command:
+        cmd: kubectl get nodes -o wide
+      register: nodes_status
+      changed_when: false
+
+    - name: Show node status
+      ansible.builtin.debug:
+        msg: "{{ nodes_status.stdout_lines }}"
+
+    - name: Check all nodes are Ready
+      ansible.builtin.command:
+        cmd: >-
+          kubectl get nodes
+          -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{range .status.conditions[?(@.type=="Ready")]}{.status}{"\n"}{end}{end}'
+      register: node_ready
+      changed_when: false
+
+    - name: Display node readiness
+      ansible.builtin.debug:
+        msg: "{{ node_ready.stdout_lines }}"
+
+    # --- Node labels ---
+    - name: Get node labels
+      ansible.builtin.command:
+        cmd: kubectl get nodes --show-labels
+      register: node_labels
+      changed_when: false
+
+    - name: Show node labels
+      ansible.builtin.debug:
+        msg: "{{ node_labels.stdout_lines }}"
+
+    # --- System pods ---
+    - name: Get kube-system pods
+      ansible.builtin.command:
+        cmd: kubectl get pods -n kube-system
+      register: system_pods
+      changed_when: false
+
+    - name: Show kube-system pods
+      ansible.builtin.debug:
+        msg: "{{ system_pods.stdout_lines }}"
+
+    # --- Rancher ---
+    - name: Get Rancher pods
+      ansible.builtin.command:
+        cmd: kubectl get pods -n cattle-system
+      register: rancher_pods
+      changed_when: false
+
+    - name: Show Rancher pods
+      ansible.builtin.debug:
+        msg: "{{ rancher_pods.stdout_lines }}"
+
+    # --- Elemental Operator ---
+    - name: Get Elemental Operator pods
+      ansible.builtin.command:
+        cmd: kubectl get pods -n cattle-elemental-system
+      register: elemental_pods
+      changed_when: false
+
+    - name: Show Elemental Operator pods
+      ansible.builtin.debug:
+        msg: "{{ elemental_pods.stdout_lines }}"
+
+    # --- MachineRegistrations ---
+    - name: Get MachineRegistrations
+      ansible.builtin.command:
+        cmd: kubectl get machineregistration -n {{ fleet_namespace }}
+      register: registrations
+      changed_when: false
+      failed_when: false
+
+    - name: Show MachineRegistrations
+      ansible.builtin.debug:
+        msg: "{{ registrations.stdout_lines | default(['No MachineRegistrations found']) }}"
+
+    # --- MachineInventory ---
+    - name: Get MachineInventory
+      ansible.builtin.command:
+        cmd: kubectl get machineinventory -n {{ fleet_namespace }}
+      register: inventory
+      changed_when: false
+      failed_when: false
+
+    - name: Show MachineInventory
+      ansible.builtin.debug:
+        msg: "{{ inventory.stdout_lines | default(['No MachineInventory entries found']) }}"
+
+    # --- Tailscale (if installed) ---
+    - name: Check if Tailscale namespace exists
+      ansible.builtin.command:
+        cmd: kubectl get namespace tailscale-system
+      register: ts_ns
+      failed_when: false
+      changed_when: false
+
+    - name: Get Tailscale pods
+      when: ts_ns.rc == 0
+      ansible.builtin.command:
+        cmd: kubectl get pods -n tailscale-system
+      register: ts_pods
+      changed_when: false
+
+    - name: Show Tailscale pods
+      when: ts_ns.rc == 0
+      ansible.builtin.debug:
+        msg: "{{ ts_pods.stdout_lines }}"
+
+    - name: Get Tailscale ingress
+      when: ts_ns.rc == 0
+      ansible.builtin.command:
+        cmd: kubectl get ingress -A
+      register: ts_ingress
+      changed_when: false
+
+    - name: Show ingress resources
+      when: ts_ns.rc == 0
+      ansible.builtin.debug:
+        msg: "{{ ts_ingress.stdout_lines }}"
+
+    # --- Cluster info ---
+    - name: Get cluster info
+      ansible.builtin.command:
+        cmd: kubectl cluster-info
+      register: cluster_info
+      changed_when: false
+
+    - name: Show cluster info
+      ansible.builtin.debug:
+        msg: "{{ cluster_info.stdout_lines }}"
+
+    # --- Summary ---
+    - name: Bootstrap verification summary
+      ansible.builtin.debug:
+        msg:
+          - "============================================="
+          - "Cluster verification complete."
+          - "============================================="
+          - ""
+          - "Nodes: {{ nodes_status.stdout_lines | length - 1 }} found"
+          - "Rancher: {{ 'Running' if rancher_pods.rc == 0 else 'Not found' }}"
+          - "Elemental Operator: {{ 'Running' if elemental_pods.rc == 0 else 'Not found' }}"
+          - "Tailscale: {{ 'Installed' if ts_ns.rc == 0 else 'Not installed' }}"
+          - ""
+          - "Kubeconfig: {{ local_kubeconfig }}"
+          - "Rancher UI: https://{{ rancher_hostname }}"

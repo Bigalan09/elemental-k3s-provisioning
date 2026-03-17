@@ -1,0 +1,142 @@
+---
+# 02-install-rancher.yml — Install cert-manager, Rancher, and the Elemental Operator.
+#
+# Runs from the MacBook against the K3s cluster using the kubeconfig
+# saved in stage 1.
+#
+# Usage:
+#   cd ansible
+#   ansible-playbook playbooks/02-install-rancher.yml
+
+- name: Install Rancher and Elemental Operator
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  environment:
+    KUBECONFIG: "{{ local_kubeconfig }}"
+  tasks:
+    # --- cert-manager ---
+    - name: Check if cert-manager namespace exists
+      ansible.builtin.command:
+        cmd: kubectl get namespace cert-manager
+      register: certmanager_ns
+      failed_when: false
+      changed_when: false
+
+    - name: Install cert-manager
+      when: certmanager_ns.rc != 0
+      block:
+        - name: Apply cert-manager manifests
+          ansible.builtin.command:
+            cmd: >-
+              kubectl apply -f
+              https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
+          changed_when: true
+
+        - name: Wait for cert-manager deployments
+          ansible.builtin.command:
+            cmd: >-
+              kubectl wait --for=condition=Available deployment --all
+              -n cert-manager --timeout=180s
+          changed_when: false
+
+    # --- Rancher ---
+    - name: Add Rancher Helm repo
+      ansible.builtin.command:
+        cmd: helm repo add rancher-latest {{ rancher_chart_repo }}
+      register: helm_add_rancher
+      changed_when: "'has been added' in helm_add_rancher.stdout"
+      failed_when: "helm_add_rancher.rc != 0 and 'already exists' not in helm_add_rancher.stderr"
+
+    - name: Update Helm repos
+      ansible.builtin.command:
+        cmd: helm repo update
+      changed_when: false
+
+    - name: Check if Rancher is already installed
+      ansible.builtin.command:
+        cmd: helm status rancher -n cattle-system
+      register: rancher_status
+      failed_when: false
+      changed_when: false
+
+    - name: Install Rancher
+      when: rancher_status.rc != 0
+      ansible.builtin.command:
+        cmd: >-
+          helm install rancher rancher-latest/rancher
+          --namespace cattle-system
+          --create-namespace
+          --set hostname={{ rancher_hostname }}
+          --set bootstrapPassword={{ rancher_bootstrap_password }}
+          --set replicas={{ rancher_replicas }}
+      changed_when: true
+
+    - name: Wait for Rancher deployment
+      ansible.builtin.command:
+        cmd: >-
+          kubectl rollout status deployment rancher
+          -n cattle-system --timeout=300s
+      changed_when: false
+
+    # --- Elemental Operator ---
+    - name: Add Rancher charts Helm repo
+      ansible.builtin.command:
+        cmd: helm repo add rancher-charts {{ elemental_chart_repo }}
+      register: helm_add_elemental
+      changed_when: "'has been added' in helm_add_elemental.stdout"
+      failed_when: "helm_add_elemental.rc != 0 and 'already exists' not in helm_add_elemental.stderr"
+
+    - name: Update Helm repos
+      ansible.builtin.command:
+        cmd: helm repo update
+      changed_when: false
+
+    - name: Check if Elemental Operator CRDs are installed
+      ansible.builtin.command:
+        cmd: helm status elemental-operator-crds -n cattle-elemental-system
+      register: elemental_crds_status
+      failed_when: false
+      changed_when: false
+
+    - name: Install Elemental Operator CRDs
+      when: elemental_crds_status.rc != 0
+      ansible.builtin.command:
+        cmd: >-
+          helm install elemental-operator-crds rancher-charts/elemental-operator-crds
+          --namespace cattle-elemental-system
+          --create-namespace
+      changed_when: true
+
+    - name: Check if Elemental Operator is installed
+      ansible.builtin.command:
+        cmd: helm status elemental-operator -n cattle-elemental-system
+      register: elemental_op_status
+      failed_when: false
+      changed_when: false
+
+    - name: Install Elemental Operator
+      when: elemental_op_status.rc != 0
+      ansible.builtin.command:
+        cmd: >-
+          helm install elemental-operator rancher-charts/elemental-operator
+          --namespace cattle-elemental-system
+          --create-namespace
+      changed_when: true
+
+    - name: Wait for Elemental Operator
+      ansible.builtin.command:
+        cmd: >-
+          kubectl rollout status deployment elemental-operator
+          -n cattle-elemental-system --timeout=180s
+      changed_when: false
+
+    - name: Verify all management pods are running
+      ansible.builtin.command:
+        cmd: kubectl get pods -n cattle-elemental-system
+      register: elemental_pods
+      changed_when: false
+
+    - name: Show Elemental Operator pods
+      ansible.builtin.debug:
+        msg: "{{ elemental_pods.stdout_lines }}"

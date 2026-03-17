@@ -1,0 +1,53 @@
+---
+# Tailscale-exposed Service for the K3s API server.
+# Makes the Kubernetes API accessible on the tailnet so kubectl works
+# from any device in your Tailscale network without port forwarding or VPN tunnels.
+#
+# The operator creates a Tailscale node named "k3s-api-lab" on your tailnet.
+# After applying, configure kubectl on your MacBook:
+#   kubectl config set-cluster lab-tailscale \
+#     --server=https://k3s-api-lab.<tailnet-name>.ts.net:443
+#
+# Prerequisites:
+#   - Tailscale Kubernetes operator installed (see docs/tailscale.md)
+#   - K3s API server running on the control plane node
+#
+# Apply to the lab cluster:
+#   kubectl apply -f clusters/lab/tailscale/apiserver-proxy.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: k3s-api-tailscale
+  namespace: default
+  annotations:
+    tailscale.com/hostname: "k3s-api-lab"
+spec:
+  type: ExternalName
+  externalName: kubernetes.default.svc.cluster.local
+  ports:
+    - port: 443
+      targetPort: 443
+      protocol: TCP
+      name: https
+---
+# A Tailscale-typed Service that proxies to the real Kubernetes API.
+# The operator will advertise this as a node on your tailnet.
+apiVersion: v1
+kind: Service
+metadata:
+  name: k3s-api-tailscale-lb
+  namespace: default
+  annotations:
+    tailscale.com/hostname: "k3s-api-lab"
+    tailscale.com/tags: "tag:k8s-api"
+spec:
+  type: LoadBalancer
+  loadBalancerClass: tailscale
+  selector:
+    component: apiserver
+  ports:
+    - port: 443
+      targetPort: 6443
+      protocol: TCP
+      name: https
