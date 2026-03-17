@@ -2,12 +2,19 @@
 hostname: agent-01
 role: agent
 installDevice: /dev/sda
+environment: production
+registrationGroup: production-registration
 
 labels:
-  environment: production
   node-type: worker
 
 taints: []
 
-sshAuthorizedKeys:
-  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExamplePublicKeyForAgent01 ops@management"
+# SSH keys are managed externally via Kubernetes Secrets.
+# sshKeySecretRef:
+#   name: production-ssh-authorized-keys
+#   namespace: fleet-default
+
+tailscale:
+  enabled: false
+  # authKeySecretName: tailscale-auth-key

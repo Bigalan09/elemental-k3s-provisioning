@@ -3,6 +3,8 @@
 hostname: placeholder
 users:
   - name: root
+    # SSH authorised keys are injected at apply time from the environment-level
+    # secret referenced in the cluster config. Do not embed real keys here.
     ssh_authorized_keys: []
 package_update: false
 runcmd:
